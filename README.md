@@ -1,5 +1,5 @@
 # AzureDevOpsChangedFilesDemo
 
-## 1-Setup
+## 3-Basic Pipeline
 
-The initial basic repository structure required for our demo of how to control executed tasks inside Azure DevOps pipelines based on changed files in the repository.
+Contains a simple pipeline which checks against hard coded paths to determine whether jobs should run.

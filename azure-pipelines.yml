@@ -1,0 +1,42 @@
+trigger:
+- master
+
+pool:
+  vmImage: windows-latest
+
+jobs:
+- job: determine_changes
+  displayName: Determine paths changed to understand jobs to run
+  steps:
+    - powershell: |
+        #Get any changed files
+        $changedFiles = git diff --name-status HEAD HEAD^ 
+        
+        # Return $true if Files/ path is in the list of changed files, otherwise $false
+        $filesChanged = ((Select-String -InputObject $changedFiles -Pattern "Files/" -AllMatches).Matches.Count -gt 0)
+        
+        # Return $true if Services/ path is in the list of changed files, otherwise $false
+        $servicesChanged = ((Select-String -InputObject $changedFiles -Pattern "Services/" -AllMatches).Matches.Count -gt 0)
+
+        #Set Azure DevOps Variables for use later
+        Write-Host "##vso[task.setvariable variable=FilesChanged;isOutput=true;]$filesChanged"
+        Write-Host "vso[task.setvariable variable=FilesChanged;isOutput=true;]$filesChanged"
+        Write-Host "##vso[task.setvariable variable=ServicesChanged;isOutput=true;]$servicesChanged"
+        Write-Host "vso[task.setvariable variable=ServicesChanged;isOutput=true;]$servicesChanged"
+      name: check_modified
+
+- job: Runs_when_Files_path_changed
+  dependsOn: determine_changes
+  variables: 
+    filesChanged: $[ dependencies.determine_changes.outputs['check_modified.FilesChanged'] ]
+  condition: eq(variables.filesChanged, 'True')
+  steps:
+    - powershell: Write-Host (Get-Content Files/example.txt)
+
+- job: Runs_when_Services_path_changed
+  dependsOn: determine_changes
+  variables: 
+    servicesChanged: $[ dependencies.determine_changes.outputs['check_modified.ServicesChanged'] ]
+  condition: eq(variables.servicesChanged, 'True')
+  steps:
+    - powershell: Write-Host (Get-Content Services/example.txt)
