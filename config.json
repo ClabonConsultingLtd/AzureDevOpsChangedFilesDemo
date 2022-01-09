@@ -1,0 +1,13 @@
+{
+    "jobs": [
+        {   "name" : "FilesChanged",
+            "path": "Files/",
+            "state": false
+        },
+        {   
+            "name" : "ServicesChanged",
+            "path": "Services/",
+            "state": false
+        }
+    ]
+}

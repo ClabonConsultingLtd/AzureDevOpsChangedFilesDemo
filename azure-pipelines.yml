@@ -1,28 +1,33 @@
 trigger:
-- master
-
+  - master
+          
 pool:
   vmImage: windows-latest
-
+  
 jobs:
 - job: determine_changes
   displayName: Determine paths changed to understand jobs to run
   steps:
     - powershell: |
-        #Get any changed files
+        #Get changed files
         $changedFiles = git diff --name-status HEAD HEAD^ 
-        
-        # Return $true if Files/ path is in the list of changed files, otherwise $false
-        $filesChanged = ((Select-String -InputObject $changedFiles -Pattern "Files/" -AllMatches).Matches.Count -gt 0)
-        
-        # Return $true if Services/ path is in the list of changed files, otherwise $false
-        $servicesChanged = ((Select-String -InputObject $changedFiles -Pattern "Services/" -AllMatches).Matches.Count -gt 0)
 
-        #Set Azure DevOps Variables for use later
-        Write-Host "##vso[task.setvariable variable=FilesChanged;isOutput=true;]$filesChanged"
-        Write-Host "vso[task.setvariable variable=FilesChanged;isOutput=true;]$filesChanged"
-        Write-Host "##vso[task.setvariable variable=ServicesChanged;isOutput=true;]$servicesChanged"
-        Write-Host "vso[task.setvariable variable=ServicesChanged;isOutput=true;]$servicesChanged"
+        #Get config file to determine paths and jobs to check
+        $config = Get-Content config.json | ConvertFrom-Json
+        foreach ($job in $config.jobs)
+        {
+            $name = $job.name
+            $path = $job.path
+            $changed = $null
+
+            if ($job.state){
+            $changed = $job.state
+            } else {
+            $changed = ((Select-String -InputObject $changedFiles -Pattern $path -AllMatches).Matches.Count -gt 0)
+            }
+            Write-Host "##vso[task.setvariable variable=$name;isOutput=true;]$changed"
+            Write-Host "vso[task.setvariable variable=$name;isOutput=true;]$changed"
+        }
       name: check_modified
 
 - job: Runs_when_Files_path_changed
